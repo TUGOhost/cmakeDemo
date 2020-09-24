@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/tg/code/Cpp/Tutorial/Step1/tutorial.cc
+tutorial.h
+/home/tg/code/Cpp/Tutorial/Step1/tutorial.h
+
+/home/tg/code/Cpp/Tutorial/Step1/tutorial.h
+stdio.h
+-
+stdlib.h
+-
+
