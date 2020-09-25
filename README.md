@@ -94,3 +94,111 @@ cmake --build
 the sqrt of 25 is 5
 ```
 
+## 添加库文件（Step 2）
+
+现在我们向我们的项目中添加一个库文件。这个库文件将会包含我们自己实现的求一个数的平方根。然后可执行文件使用此库而不是编译器提供的标准·平方根函数。
+
+作为教程，我们将这个库文件放在名为`MathFunctions`的子目录中。这个子目录包含着``mysqrt.h`的头文件和`mysqrt.cc`的源代码文件。这个源代码文件中包含一个叫`mysqrt`的函数提供了与编译器的`sqrt`函数类似的功能。
+
+将下面这行添加到`MathFuntions`目录下的`CMakeLists.txt`中：
+
+```cmake
+add_library(MathFunctions mysqrt.cc)
+```
+
+为了能够调用库文件，我们将`Step2`文件夹中的`CMakeLists.txt`文件中添加一个`add_subdirectory()`以便构建该库。我们将新库添加到可执行文件并将`MathFunctions`作为包含文件以便可以找到`mysqrt.h`头文件。
+
+```cmake
+# 设置cmake最低的版本号
+cmake_minimum_required(VERSION 3.10)
+
+# 设置项目名和版本号
+project(Tutorial VERSION 1.0) 
+
+# 指定C++标准
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+configure_file(tutorial.h.in tutorial.h)
+
+# 添加可执行的文件
+add_executable(Tutorial tutorial.cc)
+
+
+# 添加MathFunctions库
+add_subdirectory(MathFunctions)
+
+# 添加可执行程序
+add_executable(Tutorial tutorial.cc)
+
+target_link_libraries(Tutorial PUBLIC MathFunctions)
+
+# 将二叉树添加到包含文件的搜索路径以便让我们能够找到tutorial.h
+target_include_directories(Tutorial PUBLIC
+             "${PROJECT_BINARY_DIR}"
+             "${PROJECT_SOURCE_DIR}/MathFunctions"
+             )
+```
+
+ 对于大型的项目来说，`CMakeLists.txt`可以设置`MathFunctions`库设为可选。
+
+```
+option(USE_MYMATH "Use tutorial provided math implementation" ON)
+
+# 配置头文件以传递某些CMake设置到源代码
+configure_file(tutorial.h.in tutorial.h)
+```
+
+此设置存储在缓存中，因此用户无需在每次构建目录上运行CMake时都设置该值。
+
+下一个更改是使编译和链接`MathFunctions`库成为条件：
+
+```cmake
+if(USE_MYMATH)
+    add_subdirectory(MathFunctions)
+    list(APPEND EXTRA_LIBS MathFunctions)
+    list(APPEND EXTRA_INCLUDES "${PROJECT_SOURCE_DIR}/MathFunctions")
+endif()
+
+
+# 添加可执行程序
+add_executable(Tutorial tutorial.cc)
+
+target_link_libraries(Tutorial PUBLIC ${EXTRA_LIBS})
+
+# 将二叉树添加到包含文件的搜索路径以便让我们能够找到tutorial.h
+target_include_directories(Tutorial PUBLIC
+             "${PROJECT_BINARY_DIR}"
+             ${EXTRA_INCLUDES}
+             )
+```
+
+注意使用变量`EXTRA_LIBS`来收集所有可选库，以供以后链接到可执行文件中。
+
+变量`EXTRA_INCLUDES`用于可选的头文件。当处理许多可选组件时，这是一种经典方法。
+
+对源代码的相应更改非常简单。
+
+首先，如果需要，在`tutorial.cc`中包含`MathFunctions.h`头文件
+
+```c++
+#ifdef USE_MYMATH
+#include "MathFunctions.h"
+#endif
+```
+
+然后相同的文件中使`USE_MYMATH`控制使用那个平方根函数
+
+```c++
+#ifdef USE_MYMATH
+  const double outputValue = mysqrt(inputValue);
+#else
+  const double outputValue = sqrt(inputValue);
+#endif
+```
+
+之后在`tutorial.h.in`中添加：
+
+```c
+#cmakedefine USE_MYMATH
+```
