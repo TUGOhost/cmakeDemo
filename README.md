@@ -202,3 +202,42 @@ target_include_directories(Tutorial PUBLIC
 ```c
 #cmakedefine USE_MYMATH
 ```
+
+## 给库文件添加使用规则（Step 3）
+
+使用规则可以使库或者可执行文件的链接以及include得到更好的控制，同时还可以控制CMake内部目标的传递属性。使用规则的主要命令是：
+
+- target_compile_definitions()
+- target_compile_options()
+- target_include_directories()
+- target_link_libraries()
+
+让我们添加库（Step 2）中的重构代码，以使用CMake的使用规则方法。我们首先申明，链接到`MathFunctions`的任何人都需要包括当前源目录，而`MathFunctions`本身不需要。因此，这可以成为接口使用规则。
+
+记住`INTERFACE`表示消费者需要而生产者不需要的东西。将下面代码添加到`/MathFunctions/CMakeLists.txt`的末尾：
+
+```cmake
+target_include_directories(MathFunctions
+    INTERFACE${CMAKE_CURRENT_SOURCE_DIR}
+    )
+```
+
+现在，我们已经指定了`MathFunctions`的使用规则，我们可以安全的从顶级`CMakeLists.txt`中删除对`EXTRA_INCLUDES`变量的使用，这里:
+
+```cmake
+if(USE_MYMATH)
+    add_subdirectory(MathFunctions)
+    list(APPEND EXTRA_LIBS MathFunctions)    
+endif()
+```
+
+还有这里：
+
+```cmake
+target_include_directories(Tutorial PUBLIC
+    "${PROJECT_BINARY_DIR}"
+    )
+```
+
+完成此操作后，运行cmake可执行文件或者cmake-gui来配置项目，然后使用您选择的构建工具或者使用cmake --build进行构建。
+
